@@ -5,6 +5,7 @@ import { env } from '../config/env';
 import { processGeneration } from './processors/generation.processor';
 import { processPdfExport } from './processors/pdf.processor';
 import { AssignmentModel } from '../assignments/assignment.model';
+import { QuestionPaperModel } from '../papers/paper.model';
 import { LlmQuotaExhaustedError } from '../shared/llm.service';
 import { SOCKET_EVENTS } from '@vedaai/shared';
 import { generationQueue } from './queues';
@@ -106,12 +107,29 @@ export function startWorker(io: Server): { generationWorker: Worker; pdfWorker: 
     const attemptsExhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
     const nonRetryable = err?.name === 'UnrecoverableError';
     if (attemptsExhausted || nonRetryable) {
-      await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, {
+      // Paper may have been persisted before a downstream step (cache.set, socket emit) threw.
+      // If a paper for the current version exists, the job effectively succeeded — don't mark failed.
+      const { assignmentId, version } = job.data;
+      const paper = await QuestionPaperModel.findOne({ assignmentId, version }).select('_id').lean();
+      if (paper) {
+        console.warn(`[worker] job ${job.id} threw but paper v${version} exists — marking completed`);
+        await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'completed', errorMessage: null });
+        io.to(assignmentId).emit(SOCKET_EVENTS.JOB_COMPLETED, {
+          assignmentId,
+          jobId: job.id!,
+          status: 'completed' as const,
+          progress: 100,
+          message: 'Question paper ready!',
+          paperId: String(paper._id),
+        });
+        return;
+      }
+      await AssignmentModel.findByIdAndUpdate(assignmentId, {
         status: 'failed',
         errorMessage: err.message,
       });
-      io.to(job.data.assignmentId).emit(SOCKET_EVENTS.JOB_FAILED, {
-        assignmentId: job.data.assignmentId,
+      io.to(assignmentId).emit(SOCKET_EVENTS.JOB_FAILED, {
+        assignmentId,
         jobId: job.id,
         status: 'failed' as const,
         progress: 0,

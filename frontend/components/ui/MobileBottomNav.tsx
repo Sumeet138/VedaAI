@@ -14,7 +14,7 @@ export default function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-8 left-4 right-4 bg-[#1c1c1c] text-[#7a7a7a] rounded-[28px] flex justify-between items-center px-6 py-4 z-50 shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
+    <nav className="md:hidden fixed bottom-3 left-4 right-4 bg-[#1c1c1c] text-[#7a7a7a] rounded-[28px] flex justify-between items-center px-6 py-4 z-50 shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
       {navItems.map((item) => {
         const isActive = (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href));
         return (

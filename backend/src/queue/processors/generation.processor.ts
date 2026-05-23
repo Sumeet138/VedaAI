@@ -97,11 +97,16 @@ export async function processGeneration(
     plan.map((p) => ({ count: p.count, marksEach: p.marksEach })),
   );
 
-  // Step 6 — save
+  // Step 6 — save. Order matters: paper → status → cache.
+  // Cache is best-effort; if it throws we still want the assignment marked completed.
   emit('saving', 90, 'Saving question paper...');
   const paper = await paperService.upsert(assignmentId, paperData, version);
-  await cacheService.set(`paper:${assignmentId}:v${version}`, paper, 3600);
-  await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'completed' });
+  await AssignmentModel.findByIdAndUpdate(assignmentId, { status: 'completed', errorMessage: null });
+  try {
+    await cacheService.set(`paper:${assignmentId}:v${version}`, paper, 3600);
+  } catch (cacheErr) {
+    console.warn(`[worker] cache.set failed for ${assignmentId} (non-fatal):`, cacheErr);
+  }
 
   // Step 7 — done (progress event)
   emit('completed', 100, 'Question paper ready!', { paperId: paper._id.toString() });
