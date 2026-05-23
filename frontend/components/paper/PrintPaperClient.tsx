@@ -65,7 +65,7 @@ export default function PrintPaperClient({ assignmentId }: Props) {
           {schoolName}
         </h1>
         <p className="text-[15px] text-zinc-700 mt-1.5 font-semibold">Subject: {paper.subject}</p>
-        <p className="text-[15px] text-zinc-700 font-semibold">Class: {paper.gradeLevel}</p>
+        <p className="text-[15px] text-zinc-700 font-semibold">Class: {paper.gradeLevel.replace(/^class\s+/i, '')}</p>
       </header>
 
       <div className="flex items-center justify-between border-t border-zinc-200 pt-4 mb-4">
@@ -89,7 +89,7 @@ export default function PrintPaperClient({ assignmentId }: Props) {
         <p>Name: <span className="inline-block border-b border-zinc-400 w-56 ml-1 align-bottom h-4" /></p>
         <p>Roll Number: <span className="inline-block border-b border-zinc-400 w-40 ml-1 align-bottom h-4" /></p>
         <p>
-          Class: {paper.gradeLevel} Section:
+          Class: {paper.gradeLevel.replace(/^class\s+/i, '')} Section:
           <span className="inline-block border-b border-zinc-400 w-24 ml-1 align-bottom h-4" />
         </p>
       </div>

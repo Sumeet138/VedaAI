@@ -150,7 +150,7 @@ export default function PaperView({ paper, assignmentId, assignment, onRegenerat
             {schoolName}
           </h1>
           <p className="text-[13px] sm:text-[15px] text-zinc-700 mt-1.5 font-semibold">Subject: {paper.subject}</p>
-          <p className="text-[13px] sm:text-[15px] text-zinc-700 font-semibold">Class: {paper.gradeLevel}</p>
+          <p className="text-[13px] sm:text-[15px] text-zinc-700 font-semibold">Class: {paper.gradeLevel.replace(/^class\s+/i, '')}</p>
         </header>
 
         {/* Time / Marks bar */}
@@ -181,7 +181,7 @@ export default function PaperView({ paper, assignmentId, assignment, onRegenerat
             Roll Number: <span className="inline-block border-b border-zinc-400 w-24 sm:w-40 ml-1 align-bottom h-4" />
           </p>
           <p>
-            Class: {paper.gradeLevel} Section:
+            Class: {paper.gradeLevel.replace(/^class\s+/i, '')} Section:
             <span className="inline-block border-b border-zinc-400 w-16 sm:w-24 ml-1 align-bottom h-4" />
           </p>
         </div>
