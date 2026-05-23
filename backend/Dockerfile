@@ -8,7 +8,9 @@ COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
 
-# Install all workspace deps
+# Install all workspace deps (skip Puppeteer browser download — using system Chromium in runner)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 RUN npm ci
 
 # Copy source
@@ -54,7 +56,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY shared/package.json ./shared/
 COPY backend/package.json ./backend/
-RUN npm ci --omit=dev
+RUN PUPPETEER_SKIP_DOWNLOAD=true PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm ci --omit=dev
 
 # Copy compiled output
 COPY --from=builder /app/backend/dist ./backend/dist
