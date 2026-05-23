@@ -42,6 +42,28 @@ export default function PaperPageClient({ assignmentId }: Props) {
       .finally(() => setAssignmentLoaded(true));
   }, [assignmentId]);
 
+  // Poll while generating — catches missed socket events (navigation, reconnect).
+  // Stops as soon as paper lands or assignment reaches a terminal state.
+  useEffect(() => {
+    if (paper) return;
+
+    const poll = async () => {
+      try {
+        const { assignment: a } = await getAssignment(assignmentId);
+        setAssignment(a);
+        if (a.status === 'completed') {
+          const { paper: p } = await getPaper(assignmentId);
+          setPaper(assignmentId, p);
+        }
+      } catch {
+        // silent — socket is still the primary path
+      }
+    };
+
+    const id = setInterval(poll, 8_000);
+    return () => clearInterval(id);
+  }, [assignmentId, paper, setPaper]);
+
   const handleRegenerate = async () => {
     setRegenerating(true);
     setActionError(null);
@@ -66,7 +88,7 @@ export default function PaperPageClient({ assignmentId }: Props) {
   const assignmentIsFresh =
     !!assignment &&
     (assignment.status === 'pending' || assignment.status === 'processing') &&
-    Date.now() - new Date(assignment.updatedAt).getTime() < 90_000;
+    Date.now() - new Date(assignment.updatedAt).getTime() < 300_000;
 
   const isGenerating =
     !paper && !isFailed && (regenerating || hasLiveProgress || assignmentIsFresh);
