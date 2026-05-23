@@ -583,7 +583,7 @@ export default function AssignmentList() {
       </div>
 
       {/* Floating Create button (Mobile) */}
-      <div className="md:hidden fixed bottom-[90px] right-5 z-20 pointer-events-none">
+      <div className="md:hidden fixed bottom-[110px] right-5 z-20 pointer-events-none">
         <Link
           href="/assignments/create"
           className="pointer-events-auto flex items-center justify-center w-14 h-14 bg-white rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] text-[#ff5722] hover:scale-105 active:scale-95 transition-all"
