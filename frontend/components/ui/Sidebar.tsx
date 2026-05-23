@@ -2,10 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, FileText, Smartphone, BookOpen, Settings, Sparkles } from 'lucide-react';
+import { Settings, Sparkles } from 'lucide-react';
 import { useAssignmentStore } from '@/store/assignment.store';
 import { PROFILE } from '@/lib/profile';
-import { RaisedHandIcon } from '@/components/icons/RaisedHandIcon';
 
 const VedaLogo = () => (
   <div className="w-[42px] h-[42px] bg-[#2d2d2d] rounded-xl flex items-center justify-center shadow-sm shrink-0">
@@ -51,11 +50,11 @@ export default function Sidebar() {
   const assignmentCount = useAssignmentStore((s) => s.assignments.length) || 10; // Fallback to 10 for visual match with mockup if empty
 
   const menuItems = [
-    { label: 'Home', href: '/', icon: LayoutGrid, badge: null as number | null },
-    { label: 'My Groups', href: '/groups', icon: RaisedHandIcon, badge: null },
-    { label: 'Assignments', href: '/assignments', icon: FileText, badge: assignmentCount },
-    { label: 'AI Teacher\'s Toolkit', href: '/toolkit', icon: Smartphone, badge: null },
-    { label: 'My Library', href: '/library', icon: BookOpen, badge: null },
+    { label: 'Home', href: '/', iconSrc: '/svg/dashboard-icon.svg', badge: null as number | null },
+    { label: 'My Groups', href: '/groups', iconSrc: '/svg/my-group-svg.svg', badge: null },
+    { label: 'Assignments', href: '/assignments', iconSrc: '/svg/assignemnt-svg.svg', badge: assignmentCount },
+    { label: "AI Teacher's Toolkit", href: '/toolkit', iconSrc: '/svg/toolkit-svg.svg', badge: null },
+    { label: 'My Library', href: '/library', iconSrc: '/svg/my-library-svg.svg', badge: null },
   ];
 
   const isLinkActive = (href: string) => {
@@ -91,7 +90,6 @@ export default function Sidebar() {
         {/* Navigation Menu */}
         <nav className="flex flex-col gap-1 mt-1">
           {menuItems.map((item) => {
-            const Icon = item.icon;
             const active = isLinkActive(item.href);
             return (
               <Link
@@ -104,7 +102,13 @@ export default function Sidebar() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`w-[18px] h-[18px] ${active ? 'text-zinc-800 stroke-[2.5]' : 'text-zinc-400 stroke-2'}`} />
+                  <img
+                    src={item.iconSrc}
+                    alt=""
+                    width={18}
+                    height={18}
+                    className={`shrink-0 transition-opacity ${active ? 'opacity-100' : 'opacity-50'}`}
+                  />
                   <span>{item.label}</span>
                 </div>
                 {item.badge !== null && (
