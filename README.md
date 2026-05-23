@@ -196,32 +196,41 @@ Open <http://localhost:3000>.
 
 ## Key Design Decisions
 
-**No raw LLM output anywhere on screen.**
-Every section response runs through a Zod schema in `paper-parser.ts` before it's saved, including a `normalizeLatexInText()` pass that repairs broken commands (e.g. `sin(30^circ)` → `\sin(30^\circ)`). The frontend renders the validated Mongoose document — never an LLM string directly.
+### **Validated AI output**
+Teachers always see clean, quality questions — no broken math or garbled text.  
+*Every LLM response is validated against a Zod schema in `paper-parser.ts` before saving. A `normalizeLatexInText()` pass repairs broken LaTeX commands (e.g., `sin(30^circ)` → `\sin(30^\circ)`). The frontend renders only saved, validated MongoDB documents — never raw LLM strings.*
 
-**Multi-provider LLM strategy.**
-Gemini 2.5 Flash is the primary provider for standard sections; Gemini 2.5 Pro handles complex sections (numerical, diagram, long-answer) for better math/reasoning quality. Groq Llama 3.3 70B is the automatic fallback when Gemini quota is exhausted. Provider routing (`LLM_PRIMARY` / `LLM_FALLBACK`) is env-configurable — no code changes needed to swap providers. Quota-exhausted errors skip BullMQ retries via `LlmQuotaExhaustedError`.
+### **Automatic AI provider fallback**
+If Gemini runs out of quota, the system automatically switches to Groq — no manual intervention.  
+*Gemini 2.5 Flash handles standard sections; Gemini 2.5 Pro handles complex ones (numerical, diagrams, long-answer). Groq Llama 3.3 70B is the fallback when Gemini quota exhausts. Provider routes are configured via `LLM_PRIMARY` / `LLM_FALLBACK` env vars — no code changes needed to swap providers. Quota errors skip BullMQ retries via `LlmQuotaExhaustedError`.*
 
-**Sequential section generation.**
-Sections are generated one at a time to stay within per-minute rate limits. Progress events (30%→70%) crawl forward as each section lands so the UI feels live.
+### **Rate-limit–safe generation**
+Sections generate one at a time — the system respects API limits and never hits rate-limit errors.  
+*Sequential generation avoids per-minute rate limit violations. Progress events (30% → 70%) crawl forward as each section lands, so the UI shows live updates.*
 
-**Puppeteer for PDF (not jsPDF).**
-The PDF renders the exact frontend route at `/print/{id}` — KaTeX math, Mermaid diagrams, function-plot graphs, everything. The route group `app/print/` sits outside the `(main)` layout so the rendered page has no sidebar or header. The frontend signals readiness via `window.__PAPER_READY` and per-plot `data-plot-status` attributes so Puppeteer never screenshots a half-rendered diagram.
+### **Pixel-perfect PDF exports**
+The PDF looks exactly like the on-screen paper — math, diagrams, graphs, everything works.  
+*Puppeteer renders the actual frontend route at `/print/{id}` instead of trying to recreate layout in code. The route sits outside the `(main)` layout so there's no sidebar or header. The frontend signals readiness via `window.__PAPER_READY` and per-plot `data-plot-status` attributes, so Puppeteer never screenshots half-rendered diagrams.*
 
-**PDF export runs through BullMQ.**
-The synchronous endpoint is kept for backward compatibility, but the preferred flow is `POST /export/pdf` → cached descriptor or `{status: 'queued'}` → `pdf:ready` socket event → download. This keeps Express workers free during ~3–8s Puppeteer renders.
+### **Non-blocking PDF rendering**
+The server doesn't stall while generating PDFs — it queues them and notifies when ready.  
+*The synchronous endpoint exists for backward compatibility, but the standard flow is `POST /export/pdf` → `{status: 'queued'}` → `pdf:ready` socket event → download. This keeps Express workers free during ~3–8s Puppeteer renders.*
 
-**Cache key versioning.**
-`paper:{id}:v{version}` and `pdf:{id}:v{version}`. Regenerate increments the version, invalidating both keys atomically; old papers stay in MongoDB.
+### **Version-tracked papers**
+Teachers can regenerate a paper and keep old versions — nothing is ever lost.  
+*Cache keys use `paper:{id}:v{version}` and `pdf:{id}:v{version}`. Regenerate increments the version and invalidates both keys atomically. Old papers persist in MongoDB forever.*
 
-**Shared types via npm workspace.**
-`shared/` re-exports `Assignment`, `QuestionPaper`, `JobProgressEvent`, `PdfReadyEvent`, and the `SOCKET_EVENTS` constants. Type drift between client and server is impossible by construction.
+### **Type-safe frontend + backend**
+Frontend and backend use identical TypeScript types — impossible to get out of sync.  
+*The `shared/` npm workspace re-exports `Assignment`, `QuestionPaper`, `JobProgressEvent`, `PdfReadyEvent`, and `SOCKET_EVENTS` constants. Both client and server import from the same source.*
 
-**Socket pre-warm on form mount.**
-The Socket.io handshake starts as soon as the create page loads, so by the time the user submits and the app navigates to `/paper/{id}`, the connection is already open and the first progress event lands immediately.
+### **Instant real-time updates**
+Users see progress updates the moment the server sends them — no waiting.  
+*Socket.io handshake starts when the create page loads, so by submission time the connection is already open. First progress event arrives immediately.*
 
-**Optimistic progress seeding.**
-After a successful `POST /assignments`, the Zustand store seeds a `status: 'queued', progress: 0` entry before the router navigates. The paper page renders the progress overlay without a flash of empty state.
+### **No loading flash**
+The progress overlay appears instantly before the paper data arrives — UI feels snappy.  
+*After a successful `POST /assignments`, the Zustand store seeds a `status: 'queued', progress: 0` entry before the router navigates. The paper page renders immediately without empty-state flickering.*
 
 ---
 
