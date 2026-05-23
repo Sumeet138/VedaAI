@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+*.log
+coverage
+.nyc_output
+src/__tests__
+jest.config.js
