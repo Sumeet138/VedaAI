@@ -11,6 +11,10 @@ import { requireApiKey } from './middleware/auth.middleware';
 export function buildApp() {
   const app = express();
 
+  // Cloud Run sits behind Google's load balancer — trust the first proxy hop
+  // so express-rate-limit reads the real client IP from X-Forwarded-For.
+  app.set('trust proxy', 1);
+
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGIN }));
   app.use(express.json());

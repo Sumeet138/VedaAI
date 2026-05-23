@@ -254,7 +254,9 @@ export function parseSections(
   const sections = sectionJsonStrings.map((raw, i) => {
     let parsed: unknown;
     try {
-      parsed = JSON.parse(raw);
+      // Strip markdown fences Groq/some models wrap around JSON responses
+      const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+      parsed = JSON.parse(stripped);
     } catch {
       throw new PaperParseError(`Section ${i + 1} returned non-JSON response from LLM`);
     }
